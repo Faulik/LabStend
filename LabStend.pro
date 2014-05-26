@@ -29,15 +29,15 @@ FORMS    += mainwindow.ui
 RESOURCES += \
     res.qrc
 
-win32:CONFIG(release, debug|release): LIBS += e:/Dev/Git/poppler/poppler/qt5/src/libpoppler-qt5.dll
-else:win32:CONFIG(debug, debug|release): LIBS += -Le:/Dev/Git/poppler/poppler/qt5/src/ -llibpoppler-qt5d
+win32:CONFIG(release, debug|release): LIBS += $$PWD/poppler/qt5/src/libpoppler-qt5.dll
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/poppler/qt5/src/ -llibpoppler-qt5d
 
-INCLUDEPATH += e:/Dev/Git/poppler/poppler/qt5/src
-DEPENDPATH += e:/Dev/Git/poppler/poppler/qt5/src
+INCLUDEPATH += $$PWD/poppler/qt5/src
+DEPENDPATH += $$PWD/poppler/qt5/src
 
-win32:CONFIG(release, debug|release): LIBS += e:/Dev/Git/poppler/poppler/libpoppler.dll
-else:win32:CONFIG(debug, debug|release): LIBS += -Le:/Dev/Git/poppler/poppler/ -llibbpopplerd
+win32:CONFIG(release, debug|release): LIBS += $$PWD/poppler/libpoppler.dll
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/poppler/ -llibbpopplerd
 else:unix: LIBS += -Lpoppler/ -llibpoppler
 
-INCLUDEPATH += e:/Dev/Git/poppler/poppler/poppler
-DEPENDPATH += e:/Dev/Git/poppler/poppler/
+INCLUDEPATH += $$PWD/poppler/poppler
+DEPENDPATH += $$PWD/poppler/

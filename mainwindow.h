@@ -6,9 +6,14 @@
 #include <QtGui>
 #include <QLabel>
 
-#include <e:/Dev/Git/poppler/poppler/qt5/src/poppler-qt5.h>
+#include <poppler/qt5/src/poppler-qt5.h>
 
 #include <tabledata.h>
+#include <QtCore/QCoreApplication>
+#include <QtCore/QDebug>
+
+#include <QtSerialPort/QSerialPort>
+#include <QtSerialPort/QSerialPortInfo>
 
 namespace Ui {
 class MainWindow;
@@ -26,9 +31,13 @@ public:
     void plotGraph(int section, TableDataModel* model, QCustomPlot *customPlot);
     void buildText(TableDataModel* model);
     void printToPdf();
+    void openSerialPort();
+    void writeData(const QByteArray &data);
 
 private slots:
+    void closeSerialPort();
     void updateTime();
+    void readData();
 private:
     Ui::MainWindow *ui;
     QLabel *mcStatusColor;
@@ -37,6 +46,9 @@ private:
     QLabel *dateStatus;
     TableDataModel *model1;
     QVector<QVector<double> > plotData1;
+    QSerialPort *serial;
+protected:
+    void closeEvent(QCloseEvent *event);
 };
 
 #endif // MAINWINDOW_H

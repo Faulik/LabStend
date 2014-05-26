@@ -4,11 +4,8 @@
 #include <QString>
 #include <QTimer>
 #include <QFile>
-#include <QtCore/QCoreApplication>
-#include <QtCore/QDebug>
+#include <QMutex>
 
-#include <QtSerialPort/QSerialPort>
-#include <QtSerialPort/QSerialPortInfo>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -55,33 +52,93 @@ MainWindow::MainWindow(QWidget *parent) :
     }
     ui->label_3->setPixmap(QPixmap::fromImage(image));
     delete pdfPage;
-
+    /*
     foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
             qDebug() << "Name        : " << info.portName();
             qDebug() << "Description : " << info.description();
             qDebug() << "Manufacturer: " << info.manufacturer();
 
+            QByteArray msg("t");
             // Example use QSerialPort
             QSerialPort serial;
             serial.setPort(info);
-            if (serial.open(QIODevice::ReadWrite))
+            if (serial.open(QIODevice::ReadWrite)){
+                qDebug() << serial.
+                serial.write(msg);
+                qDebug() << msg;
+                qDebug() << serial.readAll();
                 serial.close();
-        }
+            }
 
+        }
+*/
     model1 = new TableDataModel(5, 8);
     ui->tableView->setSelectionMode(QAbstractItemView::SingleSelection);
     model1->initTable(model1, ui->tableView);
+    serial = new QSerialPort(this);
+    connect(serial, SIGNAL(readyRead()), this, SLOT(readData()));
+    //connect(this,SIGNAL(),this,SLOT())
+    openSerialPort();
+    serial->write(QByteArray("t"));
 }
 
 MainWindow::~MainWindow()
 {
+
     delete ui;
+}
+void MainWindow::closeEvent (QCloseEvent *event){
+    qDebug() << "Closing";
 }
 
 void MainWindow::updateTime()
 {
     timeStatus->setText(QTime::currentTime().toString("hh:mm:ss"));
 }
+
+void MainWindow::openSerialPort()
+{
+    /*
+    foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
+            qDebug() << "Name        : " << info.portName();
+            qDebug() << "Description : " << info.description();
+            qDebug() << "Manufacturer: " << info.manufacturer();
+    }
+    */
+    serial->setPortName("COM4");
+    serial->setBaudRate(QSerialPort::Baud9600);
+    serial->setDataBits(QSerialPort::Data8);
+    serial->setParity(QSerialPort::NoParity);
+    serial->setStopBits(QSerialPort::OneStop);
+    serial->setFlowControl(QSerialPort::HardwareControl);
+    if (serial->open(QIODevice::ReadWrite)) {
+            qDebug() << "Connected";
+            mcStatusColor->setStyleSheet("background-color:green");
+
+    } else {
+            qDebug() << "Error";
+            serial->close();
+    }
+}
+void MainWindow::closeSerialPort(){
+    serial->close();
+}
+void MainWindow::writeData(const QByteArray &data)
+{
+    serial->write(data);
+}
+void MainWindow::readData()
+{
+    QByteArray data = serial->readAll();
+    QList<QString> list;
+    for(int i=0;i<10;i++){
+        qDebug() << data.mid(i*6,6);
+        list << data.mid(i*6,6);
+    };
+    qDebug() << data;
+    qDebug() << list;
+}
+
 /*
 void MainWindow::plotGraph(int section, TableDataModel* model, QCustomPlot *customPlot)
 {
