@@ -22,10 +22,6 @@ MainWindow::MainWindow(QWidget *parent) :
     mcStatusColor->setStyleSheet("background-color:red");
     mcStatusColor->setFixedWidth(15);
 
-    QTimer *timer = new QTimer(this);
-    timer->setInterval(1000);
-    connect(timer,SIGNAL(timeout()),this, SLOT(updateTime()));
-    timer->start();
     dateStatus->setText(QDate::currentDate().toString("dd.MM.yy"));
 
     ui->statusBar->addPermanentWidget(timeStatus);
@@ -42,49 +38,47 @@ MainWindow::MainWindow(QWidget *parent) :
     if (document == 0) {
       return;
     }
-    Poppler::Page* pdfPage = document->page(0);
-    if (pdfPage == 0) {
-      return;
-    }
-    QImage image = pdfPage->renderToImage();
-    if (image.isNull()) {
-      return;
-    }
-    ui->label_3->setPixmap(QPixmap::fromImage(image));
-    delete pdfPage;
-    /*
-    foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
-            qDebug() << "Name        : " << info.portName();
-            qDebug() << "Description : " << info.description();
-            qDebug() << "Manufacturer: " << info.manufacturer();
-
-            QByteArray msg("t");
-            // Example use QSerialPort
-            QSerialPort serial;
-            serial.setPort(info);
-            if (serial.open(QIODevice::ReadWrite)){
-                qDebug() << serial.
-                serial.write(msg);
-                qDebug() << msg;
-                qDebug() << serial.readAll();
-                serial.close();
-            }
-
+    QVector<QGraphicsPixmapItem*> items;
+    for (int i = 0; i < document->numPages();i++){
+        Poppler::Page* pdfPage = document->page(i);
+        if (pdfPage == 0) {
+            return;
         }
-*/
+        QImage image = pdfPage->renderToImage();
+        image = image.scaledToWidth(858,Qt::SmoothTransformation);
+        if (image.isNull()) {
+            return;
+        }
+
+        items.append(scene.addPixmap(QPixmap::fromImage(image)));
+        items[i]->setPos(0, i*image.height());
+        delete pdfPage;
+    }
+    ui->graphicsView->setScene(&scene);
+    ui->graphicsView->setAlignment(Qt::AlignTop);
+    ui->graphicsView->show();
+
+
     model1 = new TableDataModel(5, 8);
     ui->tableView->setSelectionMode(QAbstractItemView::SingleSelection);
     model1->initTable(model1, ui->tableView);
+
+    //init Serial Port
     serial = new QSerialPort(this);
     connect(serial, SIGNAL(readyRead()), this, SLOT(readData()));
-    //connect(this,SIGNAL(),this,SLOT())
-    openSerialPort();
-    serial->write(QByteArray("t"));
+
+    //Timers
+    QTimer *timer = new QTimer(this);
+    timer->setInterval(1000);
+    //bottom line clock
+    connect(timer,SIGNAL(timeout()),this, SLOT(updateTime()));
+    //port check
+    connect(timer,SIGNAL(timeout()),this,SLOT(checkPorts()));
+    timer->start();
 }
 
 MainWindow::~MainWindow()
 {
-
     delete ui;
 }
 void MainWindow::closeEvent (QCloseEvent *event){
@@ -95,24 +89,29 @@ void MainWindow::updateTime()
 {
     timeStatus->setText(QTime::currentTime().toString("hh:mm:ss"));
 }
-
-void MainWindow::openSerialPort()
+void MainWindow::checkPorts()
 {
-    /*
-    foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
-            qDebug() << "Name        : " << info.portName();
-            qDebug() << "Description : " << info.description();
-            qDebug() << "Manufacturer: " << info.manufacturer();
+    if (serial->portName() != "")
+    {
+        return;
     }
-    */
-    serial->setPortName("COM4");
+    foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
+        if(info.description() == "STM32"){
+            openSerialPort(info.portName());
+        }
+    }
+}
+
+void MainWindow::openSerialPort(QString PortName)
+{
+    serial->setPortName(PortName);
     serial->setBaudRate(QSerialPort::Baud9600);
     serial->setDataBits(QSerialPort::Data8);
     serial->setParity(QSerialPort::NoParity);
     serial->setStopBits(QSerialPort::OneStop);
     serial->setFlowControl(QSerialPort::HardwareControl);
     if (serial->open(QIODevice::ReadWrite)) {
-            qDebug() << "Connected";
+            qDebug() << "Connected to" << PortName;
             mcStatusColor->setStyleSheet("background-color:green");
 
     } else {
